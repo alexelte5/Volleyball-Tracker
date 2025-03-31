@@ -1,20 +1,91 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MainApp());
-}
+/// Flutter code sample for [NavigationBar].
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+void main() => runApp(const NavigationBarApp());
+
+class NavigationBarApp extends StatelessWidget {
+  const NavigationBarApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
+    return MaterialApp(
+      theme: ThemeData(useMaterial3: true),
+      home: const NavigationExample(),
+    );
+  }
+}
+
+class NavigationExample extends StatefulWidget {
+  const NavigationExample({super.key});
+
+  @override
+  State<NavigationExample> createState() => _NavigationExampleState();
+}
+
+class _NavigationExampleState extends State<NavigationExample> {
+  int currentPageIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Scaffold(
+      bottomNavigationBar: NavigationBar(
+        onDestinationSelected: (int index) {
+          setState(() {
+            currentPageIndex = index;
+          });
+        },
+        indicatorColor: Colors.amber,
+        selectedIndex: currentPageIndex,
+        destinations: const <Widget>[
+          NavigationDestination(
+            selectedIcon: Icon(Icons.home),
+            icon: Icon(Icons.home_outlined),
+            label: 'Home',
+          ),
+          NavigationDestination(icon: Icon(Icons.man), label: 'Notifications'),
+          NavigationDestination(
+            icon: Icon(Icons.sports_basketball),
+            label: 'Messages',
+          ),
+        ],
       ),
+      body:
+          <Widget>[
+            /// Home page
+            Card(
+              shadowColor: Colors.transparent,
+              margin: const EdgeInsets.all(8.0),
+              child: SizedBox.expand(
+                child: Center(
+                  child: Text('Home page', style: theme.textTheme.titleLarge),
+                ),
+              ),
+            ),
+
+            /// Team page
+            Card(
+              shadowColor: Colors.transparent,
+              margin: const EdgeInsets.all(8.0),
+              child: SizedBox.expand(
+                child: Center(
+                  child: Text('Team page', style: theme.textTheme.titleLarge),
+                ),
+              ),
+            ),
+
+            /// Stats page
+            Card(
+              shadowColor: Colors.transparent,
+              margin: const EdgeInsets.all(8.0),
+              child: SizedBox.expand(
+                child: Center(
+                  child: Text('Stats page', style: theme.textTheme.titleLarge),
+                ),
+              ),
+            ),
+          ][currentPageIndex],
     );
   }
 }
