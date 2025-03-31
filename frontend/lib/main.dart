@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-
-/// Flutter code sample for [NavigationBar].
+import 'pages/home_page.dart';
+import 'pages/team_page.dart';
+import 'pages/stats_page.dart';
 
 void main() => runApp(const NavigationBarApp());
 
@@ -28,7 +29,6 @@ class _NavigationExampleState extends State<NavigationExample> {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     return Scaffold(
       bottomNavigationBar: NavigationBar(
         onDestinationSelected: (int index) {
@@ -44,47 +44,18 @@ class _NavigationExampleState extends State<NavigationExample> {
             icon: Icon(Icons.home_outlined),
             label: 'Home',
           ),
-          NavigationDestination(icon: Icon(Icons.man), label: 'Notifications'),
+          NavigationDestination(icon: Icon(Icons.man), label: 'Team'),
           NavigationDestination(
             icon: Icon(Icons.sports_basketball),
-            label: 'Messages',
+            label: 'Stats',
           ),
         ],
       ),
       body:
           <Widget>[
-            /// Home page
-            Card(
-              shadowColor: Colors.transparent,
-              margin: const EdgeInsets.all(8.0),
-              child: SizedBox.expand(
-                child: Center(
-                  child: Text('Home page', style: theme.textTheme.titleLarge),
-                ),
-              ),
-            ),
-
-            /// Team page
-            Card(
-              shadowColor: Colors.transparent,
-              margin: const EdgeInsets.all(8.0),
-              child: SizedBox.expand(
-                child: Center(
-                  child: Text('Team page', style: theme.textTheme.titleLarge),
-                ),
-              ),
-            ),
-
-            /// Stats page
-            Card(
-              shadowColor: Colors.transparent,
-              margin: const EdgeInsets.all(8.0),
-              child: SizedBox.expand(
-                child: Center(
-                  child: Text('Stats page', style: theme.textTheme.titleLarge),
-                ),
-              ),
-            ),
+            const HomePage(),
+            const TeamPage(),
+            const StatsPage(),
           ][currentPageIndex],
     );
   }
