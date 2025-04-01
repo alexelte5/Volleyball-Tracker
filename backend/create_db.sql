@@ -7,8 +7,8 @@ CREATE TABLE teams (
 CREATE TABLE players (
     id SERIAL PRIMARY KEY,
     team_id INTEGER,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
+    first_name TEXT,
+    last_name TEXT,
     birth_date DATE,
     jersey_number INTEGER,
     position TEXT,
