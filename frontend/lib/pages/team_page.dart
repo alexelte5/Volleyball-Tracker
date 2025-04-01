@@ -10,6 +10,12 @@ class TeamPage extends StatefulWidget {
   State<TeamPage> createState() => _TeamPageState();
 }
 
+int? jersey_number = null;
+String? first_name = null;
+String? last_name = null;
+String? birth_date = null;
+String? position = null;
+
 List<Team> teams = [];
 List<Player> players = [];
 
@@ -63,7 +69,6 @@ class _TeamPageState extends State<TeamPage> {
     try {
       final response = await http.get(Uri.parse('http://localhost:5000/teams'));
       if (response.statusCode == 200) {
-        print('Response data: ${response.body}');
         final List<dynamic> teamsResponse = List.from(
           jsonDecode(response.body),
         );
@@ -83,15 +88,10 @@ class _TeamPageState extends State<TeamPage> {
 
   Future<void> getPlayerDataFromTeam() async {
     try {
-      print(selectedTeam?.id);
-      print(
-        'Fetching players from: http://localhost:5000/players/${selectedTeam?.id}',
-      );
       final response = await http.get(
         Uri.parse('http://localhost:5000/players/${selectedTeam?.id}'),
       );
       if (response.statusCode == 200) {
-        print('Response data: ${response.body}');
         final List<dynamic> teamsResponse = List.from(
           jsonDecode(response.body),
         );
@@ -115,6 +115,37 @@ class _TeamPageState extends State<TeamPage> {
       }
     } catch (e) {
       print('Error fetching players: $e');
+    }
+  }
+
+  Future<void> addPlayer() async {
+    if (jersey_number == null) {
+      debugPrint('Jersey Number ist NULL !!!!!!!!!!!', wrapWidth: 1024);
+    }
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:5000/players'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{
+          if (first_name != null) 'first_name': first_name,
+          if (last_name != null) 'last_name': last_name,
+          if (selectedDate != null) 'birth_date': selectedDate,
+          if (jersey_number == 0) 'jersey_number': null,
+          if (jersey_number != null) 'jersey_number': jersey_number,
+          if (position != null) 'position': position,
+          'team_id': selectedTeam?.id,
+        }),
+      );
+      if (response.statusCode == 201) {
+        print('Player added successfully!');
+        getPlayerDataFromTeam(); // Refresh player list after adding
+      } else {
+        print('Failed to add player. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error adding player: $e');
     }
   }
 
@@ -150,7 +181,9 @@ class _TeamPageState extends State<TeamPage> {
                               .map(
                                 (player) => ListTile(
                                   title: Text(
-                                    "${player.firstName} ${player.lastName}",
+                                    player.lastName == null
+                                        ? "${player.firstName}"
+                                        : "${player.firstName} ${player.lastName}",
                                   ),
                                 ),
                               )
@@ -207,6 +240,9 @@ class _TeamPageState extends State<TeamPage> {
                           decoration: const InputDecoration(
                             labelText: 'First Name',
                           ),
+                          onChanged: (value) {
+                            first_name = value;
+                          },
                         ),
                       ),
                       SizedBox(
@@ -215,6 +251,9 @@ class _TeamPageState extends State<TeamPage> {
                           decoration: const InputDecoration(
                             labelText: 'Last Name',
                           ),
+                          onChanged: (value) {
+                            last_name = value;
+                          },
                         ),
                       ),
                       SizedBox(
@@ -252,6 +291,13 @@ class _TeamPageState extends State<TeamPage> {
                           decoration: const InputDecoration(
                             labelText: 'Jersey Number',
                           ),
+                          onChanged: (value) {
+                            setState(() {
+                              print(value);
+                              jersey_number =
+                                  value.isEmpty ? 0 : int.tryParse(value);
+                            });
+                          },
                         ),
                       ),
                       SizedBox(
@@ -260,6 +306,7 @@ class _TeamPageState extends State<TeamPage> {
                           decoration: const InputDecoration(
                             labelText: 'Position',
                           ),
+
                           items:
                               [
                                     'Außenangreifer',
@@ -276,7 +323,10 @@ class _TeamPageState extends State<TeamPage> {
                                   )
                                   .toList(),
                           onChanged: (value) {
-                            // Handle position selection
+                            setState(() {
+                              // Handle position selection
+                              position = value;
+                            });
                           },
                         ),
                       ),
@@ -284,6 +334,7 @@ class _TeamPageState extends State<TeamPage> {
                       ElevatedButton(
                         onPressed: () {
                           // Handle button press
+                          addPlayer();
                         },
                         child: const Text('Submit'),
                       ),
