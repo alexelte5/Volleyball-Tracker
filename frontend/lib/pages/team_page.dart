@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class TeamPage extends StatefulWidget {
   const TeamPage({super.key});
@@ -7,14 +10,113 @@ class TeamPage extends StatefulWidget {
   State<TeamPage> createState() => _TeamPageState();
 }
 
+List<Team> teams = [];
+List<Player> players = [];
+
+class Team {
+  // Eigenschaften (Felder)
+  int id;
+  String name;
+  //image
+
+  // Konstruktor
+  Team(this.id, this.name);
+}
+
+class Player {
+  // Eigenschaften (Felder)
+  int id;
+  String? firstName;
+  String? lastName;
+  String? birthDate;
+  int? jerseyNumber;
+  String? position;
+
+  // Konstruktor
+  Player(
+    this.id,
+    this.firstName,
+    this.lastName,
+    this.birthDate,
+    this.jerseyNumber,
+    this.position,
+  );
+}
+
 class _TeamPageState extends State<TeamPage> {
   String? selectedDate; // Moved selectedDate to the state
-  String? selectedTeam; // Track the selected team
+  Team? selectedTeam; // Track the selected team
   final Map<String, List<String>> teamPlayers = {
-    'Team A': ['Alice', 'Bob', 'Charlie'],
-    'Team B': ['David', 'Eve', 'Frank'],
-    'Team C': ['Grace', 'Heidi', 'Ivan'],
+    'Team A': ['Player 1', 'Player 2', 'Player 3'],
+    'Team B': ['Player 4', 'Player 5', 'Player 6'],
+    'Team C': ['Player 7', 'Player 8', 'Player 9'],
+    // Add more teams and players as needed
   };
+
+  @override
+  void initState() {
+    super.initState();
+    getTeamData();
+  }
+
+  Future<void> getTeamData() async {
+    try {
+      final response = await http.get(Uri.parse('http://localhost:5000/teams'));
+      if (response.statusCode == 200) {
+        print('Response data: ${response.body}');
+        final List<dynamic> teamsResponse = List.from(
+          jsonDecode(response.body),
+        );
+        setState(() {
+          teams =
+              teamsResponse
+                  .map((team) => Team(team['id'], team['team_name']))
+                  .toList();
+        });
+      } else {
+        print('Failed to load teams. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching teams: $e');
+    }
+  }
+
+  Future<void> getPlayerDataFromTeam() async {
+    try {
+      print(selectedTeam?.id);
+      print(
+        'Fetching players from: http://localhost:5000/players/${selectedTeam?.id}',
+      );
+      final response = await http.get(
+        Uri.parse('http://localhost:5000/players/${selectedTeam?.id}'),
+      );
+      if (response.statusCode == 200) {
+        print('Response data: ${response.body}');
+        final List<dynamic> teamsResponse = List.from(
+          jsonDecode(response.body),
+        );
+        setState(() {
+          players =
+              teamsResponse
+                  .map(
+                    (players) => Player(
+                      players['id'],
+                      players['first_name'],
+                      players['last_name'],
+                      players['birth_date'],
+                      players['jersey_number'],
+                      players['position'],
+                    ),
+                  )
+                  .toList();
+        });
+      } else {
+        print('Failed to load players. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching players: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +137,7 @@ class _TeamPageState extends State<TeamPage> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
-                      selectedTeam ??
+                      selectedTeam?.name ??
                           'No Team Selected', // Display selected team name
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
@@ -44,8 +146,14 @@ class _TeamPageState extends State<TeamPage> {
                     child: ListView(
                       padding: const EdgeInsets.all(8.0),
                       children:
-                          (teamPlayers[selectedTeam] ?? [])
-                              .map((player) => ListTile(title: Text(player)))
+                          players
+                              .map(
+                                (player) => ListTile(
+                                  title: Text(
+                                    "${player.firstName} ${player.lastName}",
+                                  ),
+                                ),
+                              )
                               .toList(),
                     ),
                   ),
@@ -72,17 +180,23 @@ class _TeamPageState extends State<TeamPage> {
                             labelText: 'Select Team',
                           ),
                           items:
-                              teamPlayers.keys
+                              teams
                                   .map(
                                     (team) => DropdownMenuItem(
-                                      value: team,
-                                      child: Text(team),
+                                      value: team.name,
+                                      child: Text(team.name),
                                     ),
                                   )
                                   .toList(),
                           onChanged: (value) {
                             setState(() {
-                              selectedTeam = value; // Update selected team
+                              // Handle team selection
+                              players.clear();
+                              selectedTeam = teams.firstWhere(
+                                (team) => team.name == value,
+                                orElse: () => Team(0, ''),
+                              );
+                              getPlayerDataFromTeam();
                             });
                           },
                         ),
