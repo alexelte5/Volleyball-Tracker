@@ -119,6 +119,8 @@ class _TeamPageState extends State<TeamPage> {
         });
       } else {
         print('Failed to load players. Status code: ${response.statusCode}');
+        players.clear(); // Clear players if the request fails
+        setState(() {});
       }
     } catch (e) {
       print('Error fetching players: $e');
@@ -173,6 +175,23 @@ class _TeamPageState extends State<TeamPage> {
     }
   }
 
+  Future<void> deletePlayer(int playerId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('http://localhost:5000/players/$playerId'),
+      );
+      if (response.statusCode == 200) {
+        print('Player deleted successfully!');
+        getPlayerDataFromTeam();
+        setState(() {});
+      } else {
+        print('Failed to delete player. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error deleting player: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -201,17 +220,105 @@ class _TeamPageState extends State<TeamPage> {
                     child: ListView(
                       padding: const EdgeInsets.all(8.0),
                       children:
-                          players
-                              .map(
-                                (player) => ListTile(
-                                  title: Text(
-                                    player.lastName == null
-                                        ? "${player.firstName}"
-                                        : "${player.firstName} ${player.lastName}",
-                                  ),
+                          players.isEmpty
+                              ? [
+                                const ListTile(
+                                  title: Text('No players found.'),
                                 ),
-                              )
-                              .toList(),
+                              ]
+                              : players
+                                  .map(
+                                    (player) => ListTile(
+                                      title: Text(
+                                        "${player.firstName ?? ''} ${player.lastName ?? ''}${player.jerseyNumber != null ? ' (#${player.jerseyNumber})' : ''}"
+                                            .trim(),
+                                      ),
+                                      trailing: IconButton(
+                                        icon: const Icon(
+                                          Icons.delete,
+                                          color: Colors.red,
+                                        ),
+                                        onPressed: () {
+                                          // Handle delete player action
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                title: const Text(
+                                                  'Delete Player',
+                                                ),
+                                                content: Text(
+                                                  player.jerseyNumber != null &&
+                                                          player.lastName !=
+                                                              null &&
+                                                          player.firstName !=
+                                                              null
+                                                      ? 'Are you sure you want to delete ${player.firstName} ${player.lastName} with jersey number ${player.jerseyNumber}?'
+                                                      : player.lastName !=
+                                                              null &&
+                                                          player.firstName !=
+                                                              null &&
+                                                          player.jerseyNumber ==
+                                                              null
+                                                      ? 'Are you sure you want to delete ${player.firstName} ${player.lastName}?'
+                                                      : player.lastName ==
+                                                              null &&
+                                                          player.firstName !=
+                                                              null &&
+                                                          player.jerseyNumber ==
+                                                              null
+                                                      ? 'Are you sure you want to delete ${player.firstName} ?'
+                                                      : player.lastName ==
+                                                              null &&
+                                                          player.firstName !=
+                                                              null &&
+                                                          player.jerseyNumber !=
+                                                              null
+                                                      ? 'Are you sure you want to delete ${player.firstName} with jersey number ${player.jerseyNumber}?'
+                                                      : player.lastName ==
+                                                              null &&
+                                                          player.firstName ==
+                                                              null &&
+                                                          player.jerseyNumber !=
+                                                              null
+                                                      ? 'Are you sure you want to delete jersey number ${player.jerseyNumber} ?'
+                                                      : player.lastName ==
+                                                              null &&
+                                                          player.firstName ==
+                                                              null &&
+                                                          player.jerseyNumber ==
+                                                              null
+                                                      ? 'Are you sure you want to delete ${player.id} ?'
+                                                      : 'Are you sure you want to delete ${player.firstName} ?',
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      Navigator.of(
+                                                        context,
+                                                      ).pop();
+                                                    },
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      // Handle delete action
+                                                      Navigator.of(
+                                                        context,
+                                                      ).pop();
+                                                      deletePlayer(player.id);
+                                                    },
+                                                    child: const Text('Delete'),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
                     ),
                   ),
                 ],
@@ -373,10 +480,11 @@ class _TeamPageState extends State<TeamPage> {
                                     hintText:
                                         'Select a date', // Remove selectedDate from hintText
                                   ),
-                                  controller: TextEditingController(
-                                    text:
-                                        selectedDate, // Display selected date in the field
-                                  ),
+                                  controller:
+                                      TextEditingController()
+                                        ..text =
+                                            selectedDate ??
+                                            '', // Display selected date in the field
                                   readOnly: true,
                                   onTap: () async {
                                     DateTime? pickedDate = await showDatePicker(
