@@ -216,6 +216,36 @@ app.delete("/players", async (req, res) => {
   }
 });
 
+app.get("/ratings", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM ratings");
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server Error");
+  }
+});
+
+app.get("/ratings/:player_id", async (req, res) => {
+  const { player_id } = req.params;
+
+  try {
+    const result = await pool.query(
+      "SELECT * FROM ratings WHERE player_id = $1",
+      [player_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Player not found" });
+    }
+
+    res.status(200).json(result.rows)
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server Error");
+  }
+});
+
 // Server starten
 app.listen(port, () => {
   console.log(`Server läuft auf http://localhost:${port}`);

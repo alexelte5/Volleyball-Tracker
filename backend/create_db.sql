@@ -63,3 +63,5 @@ CREATE TABLE ratings (
     FOREIGN KEY (player_id) REFERENCES players(id), -- Fremdschlüsselbeziehung zu "players"
     FOREIGN KEY (match_id) REFERENCES matches(id)  -- Fremdschlüsselbeziehung zu "matches"
 );
+
+
