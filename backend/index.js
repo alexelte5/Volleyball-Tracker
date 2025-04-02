@@ -80,7 +80,7 @@ app.put("/teams/:id", async (req, res) => {
       return res.status(404).json({ error: "Team not found" });
     }
 
-    res.status(201).json(result.rows[0])
+    res.status(200).json(result.rows[0])
   } catch (err) {
     console.error(err);
     res.status(500).send("Server Error");
@@ -176,7 +176,7 @@ app.put("/players/:id", async (req, res) => {
       [team_id, first_name, last_name, birth_date, jersey_number, position, profile_img, id]
     );
 
-    res.status(201).json(result.rows[0]);
+    res.status(200).json(result.rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).send("Server Error");
@@ -262,6 +262,32 @@ app.post("/matches", async (req, res) => {
     res.status(500).send("Server Error")
   }
 });
+
+app.put("/matches/:id", async (req, res) => {
+  const { id } = req.params;
+  const { match_date = null, team_id1 = null, team_id2 = null, set_score1 = null, set_score2 = null } = req.body;
+  
+  if (!match_date) missing.push("match_date");
+  if (!team_id1) missing.push("team_id1");
+  if (!team_id2) missing.push("team_id2");
+  if (missing.length > 0) {
+    return res.status(400).json({
+      error: `The following field(s) are missing: ${missing.join(", ")}`
+    });
+  }
+
+  try {
+    const result = await pool.query(
+      "UPDATE matches SET match_date = $1, team_id1 = $2, team_id2 = $3, set_score1 = $4, set_score2 = $5 WHERE id = $5 RETURNING *",
+      [match_date, team_id1, team_id2, set_score1, set_score2, id]
+    );
+
+    res.status(200).json(result.rows[0])
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server Error");
+  }
+})
 
 app.get("/ratings", async (req, res) => {
   try {
