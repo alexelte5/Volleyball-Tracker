@@ -31,7 +31,7 @@ class Player {
   String? birthDate;
   int? jerseyNumber;
   String? position;
-  PlayerStats? stats;
+  PlayerStats? playerRatings;
 
   Player(
     this.id,
@@ -40,7 +40,7 @@ class Player {
     this.birthDate,
     this.jerseyNumber,
     this.position,
-    this.stats,
+    this.playerRatings,
   );
 }
 
@@ -83,14 +83,6 @@ class PlayerStats {
   }
 
   // Method to increase a specific stat
-  void increaseStat(String stat) {
-    if (stats.containsKey(stat)) {
-      stats[stat] = (stats[stat] ?? 0) + 1;
-      print(stats);
-    } else {
-      print('Stat $stat does not exist.');
-    }
-  }
 }
 
 class _StatsPageState extends State<StatsPage> {
@@ -100,6 +92,16 @@ class _StatsPageState extends State<StatsPage> {
   void initState() {
     super.initState();
     getTeamData();
+  }
+
+  void increaseStatOfSelectedPlayer(String stat) {
+    if (selectedPlayer?.playerRatings?.stats.containsKey(stat) ?? false) {
+      selectedPlayer?.playerRatings?.stats[stat] =
+          (selectedPlayer?.playerRatings?.stats[stat] ?? 0) + 1;
+      addRatings();
+    } else {
+      print('Stat $stat does not exist.');
+    }
   }
 
   void loadStatsOfPlayer(Player player) {
@@ -121,7 +123,7 @@ class _StatsPageState extends State<StatsPage> {
           for (var stat in statsResponse) {
             if (stat['player_id'] == player.id) {
               setState(() {
-                player.stats = PlayerStats(
+                player.playerRatings = PlayerStats(
                   playerId: stat['player_id'],
                   matchId: stat['match_id'],
                   stats:
@@ -206,6 +208,25 @@ class _StatsPageState extends State<StatsPage> {
     }
   }
 
+  Future<void> addRatings() async {
+    if (selectedPlayer == null) return;
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:5000/ratings'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(selectedPlayer!.playerRatings?.toJson()),
+      );
+      if (response.statusCode == 200) {
+        print('Ratings added successfully!');
+      } else {
+        print('Failed to add ratings. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error adding ratings: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -263,7 +284,7 @@ class _StatsPageState extends State<StatsPage> {
                             "Stats:$selectedPlayer.stats SelectedPlayer:$selectedPlayer",
                           );
                           setState(() {
-                            selectedPlayer?.stats?.increaseStat('service_pp');
+                            increaseStatOfSelectedPlayer('service_pp');
                           });
                         },
                         child: const Text('++'),
@@ -273,7 +294,7 @@ class _StatsPageState extends State<StatsPage> {
                       label: ElevatedButton(
                         onPressed: () {
                           setState(() {
-                            selectedPlayer?.stats?.increaseStat('service_p');
+                            increaseStatOfSelectedPlayer('service_p');
                           });
                         },
                         child: const Text('+'),
@@ -283,7 +304,7 @@ class _StatsPageState extends State<StatsPage> {
                       label: ElevatedButton(
                         onPressed: () {
                           setState(() {
-                            selectedPlayer?.stats?.increaseStat('service_n');
+                            increaseStatOfSelectedPlayer('service_n');
                           });
                         },
                         child: const Text('-'),
@@ -293,7 +314,7 @@ class _StatsPageState extends State<StatsPage> {
                       label: ElevatedButton(
                         onPressed: () {
                           setState(() {
-                            selectedPlayer?.stats?.increaseStat('service_m');
+                            increaseStatOfSelectedPlayer('service_m');
                           });
                         },
                         child: const Text('--'),
@@ -330,7 +351,8 @@ class _StatsPageState extends State<StatsPage> {
                                   (stat) => DataCell(
                                     Center(
                                       child: Text(
-                                        player.stats?.stats[stat].toString() ??
+                                        player.playerRatings?.stats[stat]
+                                                .toString() ??
                                             '0',
                                       ),
                                     ),
