@@ -200,6 +200,22 @@ app.delete("/players/:id", async (req, res) => {
   }
 });
 
+app.delete("/players", async (req, res) => {
+  try {
+    const result = await pool.query("DELETE FROM players");
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "No players found" });
+    }
+
+    res.json({ message: "All players deleted successfully" });
+  }
+  catch (err) {
+    console.error(err);
+    res.status(500).send("Server Error")
+  }
+});
+
 // Server starten
 app.listen(port, () => {
   console.log(`Server läuft auf http://localhost:${port}`);

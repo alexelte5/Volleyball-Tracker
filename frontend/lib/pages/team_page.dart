@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print, non_constant_identifier_names
+
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -10,11 +12,16 @@ class TeamPage extends StatefulWidget {
   State<TeamPage> createState() => _TeamPageState();
 }
 
-int? jersey_number = null;
-String? first_name = null;
-String? last_name = null;
-String? birth_date = null;
-String? position = null;
+int? jersey_number;
+String? first_name;
+String? last_name;
+String? birth_date;
+String? position;
+
+String? team_name;
+
+bool addTeamSelected = false;
+bool addPlayerSelected = true;
 
 List<Team> teams = [];
 List<Player> players = [];
@@ -119,9 +126,6 @@ class _TeamPageState extends State<TeamPage> {
   }
 
   Future<void> addPlayer() async {
-    if (jersey_number == null) {
-      debugPrint('Jersey Number ist NULL !!!!!!!!!!!', wrapWidth: 1024);
-    }
     try {
       final response = await http.post(
         Uri.parse('http://localhost:5000/players'),
@@ -149,6 +153,26 @@ class _TeamPageState extends State<TeamPage> {
     }
   }
 
+  Future<void> addTeam() async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:5000/teams'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{'team_name': team_name}),
+      );
+      if (response.statusCode == 201) {
+        print('Team added successfully!');
+        getTeamData(); // Refresh team list after adding
+      } else {
+        print('Failed to add team. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error adding team: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -161,7 +185,7 @@ class _TeamPageState extends State<TeamPage> {
           Expanded(
             flex: 1,
             child: Container(
-              color: Colors.white,
+              color: const Color.fromARGB(255, 255, 255, 255),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -197,151 +221,241 @@ class _TeamPageState extends State<TeamPage> {
           // Right side: Form
           Expanded(
             flex: 2,
-            child: SizedBox.expand(
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+            child: Column(
+              children: [
+                // Navigation Bar
+                Container(
+                  color: Colors.grey[200],
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8.0,
+                    horizontal: 16.0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Team page', style: theme.textTheme.titleLarge),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: 300,
-                        child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            labelText: 'Select Team',
-                          ),
-                          items:
-                              teams
-                                  .map(
-                                    (team) => DropdownMenuItem(
-                                      value: team.name,
-                                      child: Text(team.name),
-                                    ),
-                                  )
-                                  .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              // Handle team selection
-                              players.clear();
-                              selectedTeam = teams.firstWhere(
-                                (team) => team.name == value,
-                                orElse: () => Team(0, ''),
-                              );
-                              getPlayerDataFromTeam();
-                            });
-                          },
-                        ),
-                      ),
-                      SizedBox(
-                        width: 300,
-                        child: TextField(
-                          decoration: const InputDecoration(
-                            labelText: 'First Name',
-                          ),
-                          onChanged: (value) {
-                            first_name = value;
-                          },
-                        ),
-                      ),
-                      SizedBox(
-                        width: 300,
-                        child: TextField(
-                          decoration: const InputDecoration(
-                            labelText: 'Last Name',
-                          ),
-                          onChanged: (value) {
-                            last_name = value;
-                          },
-                        ),
-                      ),
-                      SizedBox(
-                        width: 300,
-                        child: TextFormField(
-                          decoration: InputDecoration(
-                            labelText: 'Birth Date',
-                            hintText:
-                                'Select a date', // Remove selectedDate from hintText
-                          ),
-                          controller: TextEditingController(
-                            text:
-                                selectedDate, // Display selected date in the field
-                          ),
-                          readOnly: true,
-                          onTap: () async {
-                            DateTime? pickedDate = await showDatePicker(
-                              context: context,
-                              initialDate: DateTime.now(),
-                              firstDate: DateTime(1900),
-                              lastDate: DateTime.now(),
-                            );
-                            if (pickedDate != null) {
-                              setState(() {
-                                selectedDate =
-                                    '${pickedDate.toLocal()}'.split(' ')[0];
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                      SizedBox(
-                        width: 300,
-                        child: TextField(
-                          decoration: const InputDecoration(
-                            labelText: 'Jersey Number',
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              print(value);
-                              jersey_number =
-                                  value.isEmpty ? 0 : int.tryParse(value);
-                            });
-                          },
-                        ),
-                      ),
-                      SizedBox(
-                        width: 300,
-                        child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            labelText: 'Position',
-                          ),
-
-                          items:
-                              [
-                                    'Außenangreifer',
-                                    'Mittelbocker',
-                                    'Diagonal',
-                                    'Zuspieler',
-                                    'Libero',
-                                  ]
-                                  .map(
-                                    (position) => DropdownMenuItem(
-                                      value: position,
-                                      child: Text(position),
-                                    ),
-                                  )
-                                  .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              // Handle position selection
-                              position = value;
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
+                      TextButton(
                         onPressed: () {
-                          // Handle button press
-                          addPlayer();
+                          // Handle navigation to Home
+                          setState(() {
+                            addTeamSelected = false;
+                            addPlayerSelected = true;
+                          });
                         },
-                        child: const Text('Submit'),
+                        child: const Text('Add Player'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // Handle navigation to Settings
+                          setState(() {
+                            addTeamSelected = true;
+                            addPlayerSelected = false;
+                          });
+                        },
+                        child: const Text('Add Team'),
                       ),
                     ],
                   ),
                 ),
-              ),
+                //Form for adding teams
+                if (addTeamSelected)
+                  Expanded(
+                    flex: 1,
+                    child: SizedBox.expand(
+                      child: Center(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Add Team',
+                                style: theme.textTheme.titleLarge,
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: 300,
+                                child: TextField(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Team Name',
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      team_name = value;
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  // Handle button press
+                                  addTeam();
+                                },
+                                child: const Text('Submit'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                //Form for adding players
+                if (addPlayerSelected)
+                  Expanded(
+                    flex: 2,
+                    child: SizedBox.expand(
+                      child: Center(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Team page',
+                                style: theme.textTheme.titleLarge,
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: 300,
+                                child: DropdownButtonFormField<String>(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Select Team',
+                                  ),
+                                  items:
+                                      teams
+                                          .map(
+                                            (team) => DropdownMenuItem(
+                                              value: team.name,
+                                              child: Text(team.name),
+                                            ),
+                                          )
+                                          .toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      // Handle team selection
+                                      players.clear();
+                                      selectedTeam = teams.firstWhere(
+                                        (team) => team.name == value,
+                                        orElse: () => Team(0, ''),
+                                      );
+                                      getPlayerDataFromTeam();
+                                    });
+                                  },
+                                ),
+                              ),
+                              SizedBox(
+                                width: 300,
+                                child: TextField(
+                                  decoration: const InputDecoration(
+                                    labelText: 'First Name',
+                                  ),
+                                  onChanged: (value) {
+                                    first_name = value;
+                                  },
+                                ),
+                              ),
+                              SizedBox(
+                                width: 300,
+                                child: TextField(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Last Name',
+                                  ),
+                                  onChanged: (value) {
+                                    last_name = value;
+                                  },
+                                ),
+                              ),
+                              SizedBox(
+                                width: 300,
+                                child: TextFormField(
+                                  decoration: InputDecoration(
+                                    labelText: 'Birth Date',
+                                    hintText:
+                                        'Select a date', // Remove selectedDate from hintText
+                                  ),
+                                  controller: TextEditingController(
+                                    text:
+                                        selectedDate, // Display selected date in the field
+                                  ),
+                                  readOnly: true,
+                                  onTap: () async {
+                                    DateTime? pickedDate = await showDatePicker(
+                                      context: context,
+                                      initialDate: DateTime.now(),
+                                      firstDate: DateTime(1900),
+                                      lastDate: DateTime.now(),
+                                    );
+                                    if (pickedDate != null) {
+                                      setState(() {
+                                        selectedDate =
+                                            '${pickedDate.toLocal()}'.split(
+                                              ' ',
+                                            )[0];
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                              SizedBox(
+                                width: 300,
+                                child: TextField(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Jersey Number',
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      jersey_number =
+                                          value.isEmpty
+                                              ? 0
+                                              : int.tryParse(value);
+                                    });
+                                  },
+                                ),
+                              ),
+                              SizedBox(
+                                width: 300,
+                                child: DropdownButtonFormField<String>(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Position',
+                                  ),
+                                  items:
+                                      [
+                                            'Außenangreifer',
+                                            'Mittelbocker',
+                                            'Diagonal',
+                                            'Zuspieler',
+                                            'Libero',
+                                          ]
+                                          .map(
+                                            (position) => DropdownMenuItem(
+                                              value: position,
+                                              child: Text(position),
+                                            ),
+                                          )
+                                          .toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      // Handle position selection
+                                      position = value;
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  // Handle button press
+                                  addPlayer();
+                                },
+                                child: const Text('Submit'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
