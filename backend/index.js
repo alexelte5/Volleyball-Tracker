@@ -230,6 +230,11 @@ app.get("/matches/:id", async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query("SELECT * FROM matches WHERE id = $1", [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Match not found" });
+    }
+
     res.status(200).json(result.rows);
   } catch (err) {
     console.error(err);
@@ -299,7 +304,7 @@ app.get("/ratings", async (req, res) => {
   }
 });
 
-app.get("/ratings/:player_id", async (req, res) => {
+app.get("/ratings/p/:player_id", async (req, res) => {
   const { player_id } = req.params;
 
   try {
@@ -313,6 +318,46 @@ app.get("/ratings/:player_id", async (req, res) => {
     }
 
     res.status(200).json(result.rows)
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server Error");
+  }
+});
+
+app.get("/ratings/:player_id/:match_id", async (req, res) => {
+  const { player_id, match_id } = req.params;
+
+  try {
+    const result = await pool.query(
+      "SELECT * FROM ratings WHERE player_id = $1 AND match_id = $2",
+      [player_id, match_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "No rating found for this player and match" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server Error")
+  }
+});
+
+app.get("/ratings/m/:match_id", async (req, res) => {
+  const { match_id } = req.params;
+
+  try {
+    const result = await pool.query(
+      "SELECT * FROM ratings WHERE match_id = $1",
+      [match_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "No ratings found for this match"});
+    }
+
+    res.status(200).json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).send("Server Error");
