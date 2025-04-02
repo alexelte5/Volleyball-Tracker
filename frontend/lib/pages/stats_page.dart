@@ -16,6 +16,25 @@ Player? selectedPlayer;
 
 List<Team> teams = [];
 List<Player> players = [];
+List<Match> matches = [];
+
+class Match {
+  int id;
+  String? date;
+  Team team1;
+  Team team2;
+  int finalScoreTeam1;
+  int finalScoreTeam2;
+
+  Match(
+    this.id,
+    this.date,
+    this.team1,
+    this.team2,
+    this.finalScoreTeam1,
+    this.finalScoreTeam2,
+  );
+}
 
 class Team {
   int id;
@@ -208,6 +227,34 @@ class _StatsPageState extends State<StatsPage> {
     }
   }
 
+  Future<void> getMatchData() async {
+    try {
+      final response = await http.get(Uri.parse('http://localhost:5000/match'));
+      if (response.statusCode == 200) {
+        final List<dynamic> matchesResponse = List.from(
+          jsonDecode(response.body),
+        );
+        setState(() {
+          matches =
+              matchesResponse.map((match) {
+                return Match(
+                  match['id'],
+                  match['date'],
+                  Team(match['team1_id'], match['team1_name']),
+                  Team(match['team2_id'], match['team2_name']),
+                  match['final_score_team1'],
+                  match['final_score_team2'],
+                );
+              }).toList();
+        });
+      } else {
+        print('Failed to load matches. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching matches: $e');
+    }
+  }
+
   Future<void> addRatings() async {
     if (selectedPlayer == null) return;
 
@@ -236,6 +283,24 @@ class _StatsPageState extends State<StatsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            DropdownButton<Match>(
+              items:
+                  matches
+                      .map(
+                        (match) => DropdownMenuItem<Match>(
+                          value: match,
+                          child: Text(
+                            '${match.team1.name} : ${match.team2.name}  ${match.date}',
+                          ),
+                        ),
+                      )
+                      .toList(),
+              value: null, // Add a default value or manage state for selection
+              hint: const Text('Select a match'),
+              onChanged: (Match? selectedMatch) {
+                // Handle match selection
+              },
+            ),
             // Dropdown for selecting a team
             DropdownButton<Team>(
               value: selectedTeam,
@@ -307,7 +372,7 @@ class _StatsPageState extends State<StatsPage> {
                             increaseStatOfSelectedPlayer('service_n');
                           });
                         },
-                        child: const Text('-'),
+                        child: const Text('o'),
                       ),
                     ),
                     DataColumn(
@@ -317,7 +382,7 @@ class _StatsPageState extends State<StatsPage> {
                             increaseStatOfSelectedPlayer('service_m');
                           });
                         },
-                        child: const Text('--'),
+                        child: const Text('-'),
                       ),
                     ),
                     const DataColumn(label: Text('Attack')),

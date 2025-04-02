@@ -64,4 +64,3 @@ CREATE TABLE ratings (
     FOREIGN KEY (match_id) REFERENCES matches(id)  -- Fremdschlüsselbeziehung zu "matches"
 );
 
-

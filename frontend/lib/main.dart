@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'pages/home_page.dart';
 import 'pages/team_page.dart';
 import 'pages/stats_page.dart';
+import 'pages/match_page.dart' hide TeamPage; // Hide TeamPage from this import
 
 void main() => runApp(const NavigationBarApp());
 
@@ -49,6 +50,10 @@ class _NavigationExampleState extends State<NavigationExample> {
             icon: Icon(Icons.sports_basketball),
             label: 'Stats',
           ),
+          NavigationDestination(
+            icon: Icon(Icons.sports_volleyball),
+            label: 'Match',
+          ),
         ],
       ),
       body:
@@ -56,6 +61,7 @@ class _NavigationExampleState extends State<NavigationExample> {
             const HomePage(),
             const TeamPage(),
             const StatsPage(),
+            const MatchPage(),
           ][currentPageIndex],
     );
   }

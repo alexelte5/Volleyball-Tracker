@@ -216,7 +216,7 @@ app.delete("/players", async (req, res) => {
   }
 });
 
-app.get("matches", async (req, res) => {
+app.get("/matches", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM matches");
     res.status(200).json(result.rows);
@@ -226,7 +226,7 @@ app.get("matches", async (req, res) => {
   }
 });
 
-app.get("matches/:id", async (req, res) => {
+app.get("/matches/:id", async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query("SELECT * FROM matches WHERE id = $1", [id]);
@@ -238,10 +238,10 @@ app.get("matches/:id", async (req, res) => {
 });
 
 app.post("/matches", async (req, res) => {
-  const { match_date, team_id1, team_id2, set_score1 = null, set_score2 = null } = req.body;
+  const { match_day, team_id1, team_id2, set_score1 = null, set_score2 = null } = req.body;
   const missing = [];
 
-  if (!match_date) missing.push("match_date");
+  if (!match_day) missing.push("match_day");
   if (!team_id1) missing.push("team_id1");
   if (!team_id2) missing.push("team_id2");
   if (missing.length > 0) {
@@ -252,8 +252,8 @@ app.post("/matches", async (req, res) => {
 
   try {
     const result = await pool.query(
-      "INSERT INTO matches (match_date, team_id1, team_id2, set_score1, set_score2) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [match_date, team_id1, team_id2, set_score1, set_score2]
+      "INSERT INTO matches (match_day, team_id1, team_id2, set_score1, set_score2) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [match_day, team_id1, team_id2, set_score1, set_score2]
     );
 
     res.status(201).json(result.rows[0]);
@@ -265,9 +265,9 @@ app.post("/matches", async (req, res) => {
 
 app.put("/matches/:id", async (req, res) => {
   const { id } = req.params;
-  const { match_date = null, team_id1 = null, team_id2 = null, set_score1 = null, set_score2 = null } = req.body;
-  
-  if (!match_date) missing.push("match_date");
+  const { match_day, team_id1, team_id2, set_score1 = null, set_score2 = null } = req.body;
+
+  if (!match_day) missing.push("match_day");
   if (!team_id1) missing.push("team_id1");
   if (!team_id2) missing.push("team_id2");
   if (missing.length > 0) {
@@ -279,7 +279,7 @@ app.put("/matches/:id", async (req, res) => {
   try {
     const result = await pool.query(
       "UPDATE matches SET match_date = $1, team_id1 = $2, team_id2 = $3, set_score1 = $4, set_score2 = $5 WHERE id = $5 RETURNING *",
-      [match_date, team_id1, team_id2, set_score1, set_score2, id]
+      [match_day, team_id1, team_id2, set_score1, set_score2, id]
     );
 
     res.status(200).json(result.rows[0])
