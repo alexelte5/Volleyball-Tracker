@@ -216,6 +216,53 @@ app.delete("/players", async (req, res) => {
   }
 });
 
+app.get("matches", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM matches");
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server Error");
+  }
+});
+
+app.get("matches/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query("SELECT * FROM matches WHERE id = $1", [id]);
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server Error");
+  }
+});
+
+app.post("/matches", async (req, res) => {
+  const { match_date, team_id1, team_id2, set_score1 = null, set_score2 = null } = req.body;
+  const missing = [];
+
+  if (!match_date) missing.push("match_date");
+  if (!team_id1) missing.push("team_id1");
+  if (!team_id2) missing.push("team_id2");
+  if (missing.length > 0) {
+    return res.status(400).json({
+      error: `The following field(s) are missing: ${missing.join(", ")}`
+    });
+  }
+
+  try {
+    const result = await pool.query(
+      "INSERT INTO matches (match_date, team_id1, team_id2, set_score1, set_score2) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [match_date, team_id1, team_id2, set_score1, set_score2]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server Error")
+  }
+});
+
 app.get("/ratings", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM ratings");
