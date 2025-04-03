@@ -112,7 +112,7 @@ app.get("/players", async (req, res) => {
     console.error(err);
     res.status(500).send("Server Error");
   }
-})
+});
 
 app.get("/players/:team_id", async (req, res) => {
   const { team_id } = req.params;
@@ -292,7 +292,7 @@ app.put("/matches/:id", async (req, res) => {
     console.error(err);
     res.status(500).send("Server Error");
   }
-})
+});
 
 app.get("/ratings", async (req, res) => {
   try {
@@ -361,6 +361,51 @@ app.get("/ratings/m/:match_id", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send("Server Error");
+  }
+});
+
+app.post("/ratings", async (req, res) => {
+  const { player_id, match_id, service_pp = 0, service_p = 0, service_n = 0, service_m = 0, attack_pp = 0, attack_p = 0, attack_n = 0, attack_m = 0, block_pp = 0, block_n = 0, block_m = 0, receive_p = 0, receive_n = 0, receive_m = 0, defense_p = 0, defense_n = 0, defense_m = 0 } = req.body;
+
+  if(!player_id || !match_id) {
+    return res.status(404).json({ error: "player_id or match_id missing" });
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO ratings (player_id, match_id, service_pp, service_p, service_n, service_m, attack_pp, attack_p, attack_n, attack_m, block_pp, block_n, block_m, receive_p, receive_n, receive_m, defense_p, defense_n, defense_m) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+      RETURNING *`,
+      [player_id, match_id, service_pp, service_p, service_n, service_m, attack_pp, attack_p, attack_n, attack_m, block_pp, block_n, block_m, receive_p, receive_n, receive_m, defense_p, defense_n, defense_m]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
+  }
+});
+
+app.put("/ratings/:id", async (req, res) => {
+  const { id } = req.params;
+  const { player_id, match_id, service_pp = 0, service_p = 0, service_n = 0, service_m = 0, attack_pp = 0, attack_p = 0, attack_n = 0, attack_m = 0, block_pp = 0, block_n = 0, block_m = 0, receive_p = 0, receive_n = 0, receive_m = 0, defense_p = 0, defense_n = 0, defense_m = 0 } = req.body;
+
+  if (!player_id || !match_id) {
+    return res.status(404).json({ error: "player_id or match_id missing" });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE ratings SET player_id = $1, match_id = $2, service_pp = $3, service_p = $4, service_n = $5, service_m = $6, attack_pp = $7, attack_p = $8, attack_n = $9, attack_m = $10, block_pp = $11, block_n = $12, block_m = $13, receive_p = $14, receive_n = $15, receive_m = $16, defense_p = $17, defense_n = $18, defense_m = $19 
+      WHERE id = $20 
+      RETURNING *`, 
+      [player_id, match_id, service_pp, service_p, service_n, service_m, attack_pp, attack_p, attack_n, attack_m, block_pp, block_n, block_m, receive_p, receive_n, receive_m, defense_p, defense_n, defense_m, id]
+    );
+
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error"); 
   }
 });
 
