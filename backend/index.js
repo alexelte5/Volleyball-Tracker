@@ -256,12 +256,31 @@ app.post("/matches", async (req, res) => {
   }
 
   try {
-    const result = await pool.query(
+    const matchResult = await pool.query(
       "INSERT INTO matches (match_day, team_id1, team_id2, set_score1, set_score2) VALUES ($1, $2, $3, $4, $5) RETURNING *",
       [match_day, team_id1, team_id2, set_score1, set_score2]
     );
 
-    res.status(201).json(result.rows[0]);
+    const newMatch = matchResult.rows[0];
+
+    const playersTeam1 = await pool.query(
+      "SELECT * FROM players WHERE team_id = $1",
+      [team_id1]
+    );
+    const playersTeam2 = await pool.query(
+      "SELECT * FROM players WHERE team_id = $1",
+      [team_id2]
+    );
+    const allPlayers = [...playersTeam1.rows, ...playersTeam2.rows];
+    const ratingPromises = allPlayers.map(player => {
+      return pool.query(
+        `INSERT INTO ratings (player_id, match_id, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,) VALUES ($1, $2) RETURNING *`,
+        [player.id, newMatch.id]
+      );
+    });
+    await Promise.all(ratingPromises);
+
+    res.status(201).json(newMatch);
   } catch (err) {
     console.error(err);
     res.status(500).send("Server Error")
